@@ -9,33 +9,34 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.View.OnTouchListener;
 import android.widget.Toast;
 
 
-public class TuioTest extends Activity {
+public class TuioTest extends Activity implements OnTouchListener {
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-//        Log.d("asdf", stringFromJNI());
-//        Log.d("testwin", testSUinputOpen());
-        
-//        final IWindowManager winman = new IWindowManager();
-        MotionEvent e = MotionEvent.obtain(System.currentTimeMillis(), System.currentTimeMillis()+2, MotionEvent.ACTION_DOWN, 100, 100, 0);
-//        WindowManagerService c;
-//        winman.injectPointerEvent(e, true);
+        View v = findViewById(R.id.mainview);
+        v.setOnTouchListener(this);
         doBindService();
         
     }
     
-    private InstHackService mBoundService;
+    private TuioService mBoundService;
     private ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
-            mBoundService = ((InstHackService.LocalBinder)service).getService();
+            mBoundService = ((TuioService.LocalBinder)service).getService();
             // Tell the user about this for our demo.
             Toast.makeText(TuioTest.this,"Bound!",
                     Toast.LENGTH_SHORT).show();
+            Log.d("asff", "Service is bound!");
+            mBoundService.startService(new Intent(TuioTest.this, 
+            		TuioService.class));
+
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -50,18 +51,15 @@ public class TuioTest extends Activity {
     	Log.d("asdf","Bound!");
     	
         bindService(new Intent(TuioTest.this, 
-                InstHackService.class), mConnection, Context.BIND_AUTO_CREATE);
+        		TuioService.class), mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
     }
+	@Override
+	public boolean onTouch(View v, MotionEvent event) {
+		Log.d("TuioTest", "Recieved on touch event!! "+event);
+		return true;
+	}
 
-    
-//    
-//    public native String stringFromJNI();
-//    public native String testSUinputOpen();
-//    
-//    static {
-//    	System.loadLibrary("testmodule");
-//    }
     
     
 
