@@ -1,2 +1,4 @@
-TUIOService/bin/
-TUIOService/gen/
+TUIOService/bin
+TUIOService/bin/*
+TUIOService/gen
+TUIOService/gen/*

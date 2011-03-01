@@ -1,0 +1,15 @@
+#To bridge Virtualbox android and host:
+#http://mydebian.blogdns.org/?p=148
+## set up TUIO
+ VBoxManage setextradata AndroidX86 "VBoxInternal/Devices/pcnet/0/LUN#0/Config/tuio/HostPort" 3333
+ VBoxManage setextradata AndroidX86 "VBoxInternal/Devices/pcnet/0/LUN#0/Config/tuio/GuestPort" 3333
+ VBoxManage setextradata AndroidX86 "VBoxInternal/Devices/pcnet/0/LUN#0/Config/tuio/Protocol" UDP
+# VBoxManage setextradata AndroidX86 "VBoxInternal/Devices/pcnet/0/LUN#0/Config/ssh/HostPort" 3333
+# VBoxManage setextradata AndroidX86 "VBoxInternal/Devices/pcnet/0/LUN#0/Config/ssh/GuestPort" 3333
+# VBoxManage setextradata AndroidX86 "VBoxInternal/Devices/pcnet/0/LUN#0/Config/ssh/Protocol" UDP
+
+## set up ADB
+ VBoxManage setextradata AndroidX86 "VBoxInternal/Devices/pcnet/0/LUN#0/Config/adb/HostPort" 5569
+ VBoxManage setextradata AndroidX86 "VBoxInternal/Devices/pcnet/0/LUN#0/Config/adb/GuestPort" 5555
+ VBoxManage setextradata AndroidX86 "VBoxInternal/Devices/pcnet/0/LUN#0/Config/adb/Protocol" TCP
+

@@ -1,2 +1,13 @@
 TUIO for Android-x86
+
 An attempt to add native TUIO input support to the Android platform.
+
+
+
+quick tips:
+to get the emulator to listen to your port 3333:
+    telnet localhost 5554
+    redir add udp:3333:3333
+
+
+see http://stackoverflow.com/questions/3635101/how-to-sign-android-app-with-system-signature to sign app for system

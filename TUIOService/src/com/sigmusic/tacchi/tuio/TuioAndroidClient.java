@@ -28,7 +28,7 @@ public class TuioAndroidClient implements TuioListener {
 	}
 	
 	public void start() {
-		Log.v(TAG, "Starting client");
+		Log.v(TAG, "Starting TUIO client on port:" +3333);
 		client.connect();
 	}
 	

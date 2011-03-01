@@ -41,6 +41,7 @@ public class TuioService extends Service {
         Log.d( TAG, "WindowManager: "+wmbinder );
         windowman =  IWindowManager.Stub.asInterface( wmbinder );
 
+        
     }
     
     public void sendMotionEvent(MotionEvent me) {
