@@ -47,7 +47,64 @@ public class TuioAndroidClient implements TuioListener {
 		int actionmasked = action |( 0x1 << (7+id) & 0xff00);
 		
 		Log.d("TuioEvent", "TuioContainer: "+point.toString()+" startms: "+startms+" totalms: "+totalms+" cursors: "+totalcursors+" id: "+id+ " action: "+action+" Action masked: "+actionmasked);
-		currentEvent = MotionEvent.obtain(startms, totalms, actionmasked, totalcursors, point.getScreenX(width), point.getScreenY(height), 1, 0.1f, 0, 0, 0, 0, 0);
+		
+	    /**	     * 
+	     * @param eventTimeNano  The the time (in ns) when this specific event was generated.  This 
+	     * must be obtained from {@link System#nanoTime()}.
+	     * @param action The kind of action being performed -- one of either
+	     * {@link #ACTION_DOWN}, {@link #ACTION_MOVE}, {@link #ACTION_UP}, or
+	     * {@link #ACTION_CANCEL}.
+	     * @param pointers The number of points that will be in this event.
+	     * @param inPointerIds An array of <em>pointers</em> values providing
+	     * an identifier for each pointer.
+	     * @param inData An array of <em>pointers*NUM_SAMPLE_DATA</em> of initial
+	     * data samples for the event.
+	     * @param metaState The state of any meta / modifier keys that were in effect when
+	     * the event was generated.
+	     * @param xPrecision The precision of the X coordinate being reported.
+	     * @param yPrecision The precision of the Y coordinate being reported.
+	     * @param deviceId The id for the device that this event came from.  An id of
+	     * zero indicates that the event didn't come from a physical device; other
+	     * numbers are arbitrary and you shouldn't depend on the values.
+	     * @param edgeFlags A bitfield indicating which edges, if any, where touched by this
+	     * MotionEvent.
+	     *
+	     * @hide
+	     */
+		
+		int[] pointerIds = new int[totalcursors];
+		int i =0;
+		float[] inData = new float[totalcursors * 4]; // 4 = MotionEvent.NUM_SAMPLE_DATA;
+		for (TuioObject obj : client.getTuioObjects()) {
+			pointerIds[i] = obj.getSymbolID();
+			
+			inData[i*4] = obj.getScreenX(width);
+			inData[i*4+1] = obj.getScreenY(height);
+			inData[i*4+2] = 1;//pressure
+			inData[i*4+3] = 0.1f; //size
+			i++;
+
+		}
+		for (TuioCursor obj : client.getTuioCursors()) {
+			pointerIds[i] = obj.getCursorID();
+			inData[i*4] = obj.getScreenX(width);
+			inData[i*4+1] = obj.getScreenY(height);
+			inData[i*4+2] = 1;//pressure
+			inData[i*4+3] = 0.1f; //size
+			i++;
+
+		}
+		
+
+		if (action != MotionEvent.ACTION_MOVE)
+			currentEvent = MotionEvent.obtainNano(startms, totalms, System.nanoTime(), actionmasked, totalcursors, pointerIds, inData, 0, 0, 0, 0, 0);
+		else 
+			currentEvent.addBatch(totalms, inData, 0);
+		
+		
+		
+		
+		
 		return currentEvent;
 	}
 	
@@ -70,7 +127,6 @@ public class TuioAndroidClient implements TuioListener {
 //		Log.d(TAG, "forwarding");
 		int event = (id == 0) ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_POINTER_DOWN;
 		MotionEvent me = makeOrUpdateMotionEvent(point, id, event);
-		currentEvent = me;
 		callback.sendMotionEvent(me);
 	}
 	
@@ -90,11 +146,9 @@ public class TuioAndroidClient implements TuioListener {
 	private void updateTuioThing(TuioContainer point, int id) {
 		int key = id;
 
-		long totalms = point.getTuioTime().getTotalMilliseconds();
-		currentEvent = MotionEvent.obtain(currentEvent);
-		currentEvent.setAction(MotionEvent.ACTION_MOVE);
-		currentEvent.addBatch(totalms, point.getScreenX(width), point.getScreenY(height), 1, 0.1f, 0);
-		callback.sendMotionEvent(currentEvent);
+		int event = MotionEvent.ACTION_MOVE;
+		MotionEvent me = makeOrUpdateMotionEvent(point, id, event);
+		callback.sendMotionEvent(me);
 
 	}
 
@@ -113,11 +167,8 @@ public class TuioAndroidClient implements TuioListener {
 	private void removeTuioThing(TuioContainer point, int id) {
 //		Log.d(TAG, "forwarding");
 		int event = (id == 0) ? MotionEvent.ACTION_UP : MotionEvent.ACTION_POINTER_UP;
-		currentEvent.setAction(event);
-		callback.sendMotionEvent(currentEvent);
-		if (getNumCursors() == 0) {
-			currentEvent = null;
-		}
+		MotionEvent me = makeOrUpdateMotionEvent(point, id, event);
+		callback.sendMotionEvent(me);
 	}
 
 
