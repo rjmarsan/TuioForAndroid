@@ -1,15 +1,11 @@
 package com.sigmusic.tacchi.tuio;
 
-import java.util.HashMap;
-
 import TUIO.TuioClient;
 import TUIO.TuioContainer;
 import TUIO.TuioCursor;
 import TUIO.TuioListener;
 import TUIO.TuioObject;
-import TUIO.TuioPoint;
 import TUIO.TuioTime;
-import android.os.SystemClock;
 import android.util.Log;
 import android.view.MotionEvent;
 
@@ -19,7 +15,7 @@ public class TuioAndroidClient implements TuioListener {
 	TuioService callback;
 	int width, height;
 	
-	HashMap<Integer, MotionEvent> motionEventMap = new HashMap<Integer, MotionEvent>();
+	MotionEvent currentEvent;
 	
 	public TuioAndroidClient(TuioService callback, int width, int height) {
 		client = new TuioClient();
@@ -40,17 +36,19 @@ public class TuioAndroidClient implements TuioListener {
 	}
 	
 	
-	private MotionEvent makeMotionEvent(TuioContainer point, int id, int action) {
+	
+	private int getNumCursors() {
+		return client.getTuioCursors().size() + client.getTuioObjects().size();
+	}
+	private MotionEvent makeOrUpdateMotionEvent(TuioContainer point, int id, int action) {
 		long startms = point.getStartTime().getTotalMilliseconds();
 		long totalms = point.getTuioTime().getTotalMilliseconds();
-		int totalcursors = client.getTuioCursors().size()+client.getTuioObjects().size();
+		int totalcursors = getNumCursors();
 		int actionmasked = action |( 0x1 << (7+id) & 0xff00);
 		
-		
 		Log.d("TuioEvent", "TuioContainer: "+point.toString()+" startms: "+startms+" totalms: "+totalms+" cursors: "+totalcursors+" id: "+id+ " action: "+action+" Action masked: "+actionmasked);
-		
-		MotionEvent me = MotionEvent.obtain(startms, totalms, actionmasked, totalcursors, point.getScreenX(width), point.getScreenY(height), 1, 0.1f, 0, 0, 0, 0, 0);
-		return me;
+		currentEvent = MotionEvent.obtain(startms, totalms, actionmasked, totalcursors, point.getScreenX(width), point.getScreenY(height), 1, 0.1f, 0, 0, 0, 0, 0);
+		return currentEvent;
 	}
 	
 	
@@ -71,8 +69,8 @@ public class TuioAndroidClient implements TuioListener {
 	private void addTuioThing(TuioContainer point, int id) {
 //		Log.d(TAG, "forwarding");
 		int event = (id == 0) ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_POINTER_DOWN;
-		MotionEvent me = makeMotionEvent(point, id, event);
-		motionEventMap.put(id, me);
+		MotionEvent me = makeOrUpdateMotionEvent(point, id, event);
+		currentEvent = me;
 		callback.sendMotionEvent(me);
 	}
 	
@@ -91,18 +89,12 @@ public class TuioAndroidClient implements TuioListener {
 	
 	private void updateTuioThing(TuioContainer point, int id) {
 		int key = id;
-		if (motionEventMap.containsKey(key)) {
-			MotionEvent me = motionEventMap.get(key);
-			if (me != null) {
-				long totalms = point.getTuioTime().getTotalMilliseconds();
-				me = MotionEvent.obtain(me);
-				me.addBatch(totalms, point.getScreenX(width), point.getScreenY(height), 1, 0.1f, 0);
-				me.setAction(MotionEvent.ACTION_MOVE);
-				//				Log.d(TAG, "forwarding");
-				motionEventMap.put(key, me);
-				callback.sendMotionEvent(me);
-			}
-		}
+
+		long totalms = point.getTuioTime().getTotalMilliseconds();
+		currentEvent = MotionEvent.obtain(currentEvent);
+		currentEvent.setAction(MotionEvent.ACTION_MOVE);
+		currentEvent.addBatch(totalms, point.getScreenX(width), point.getScreenY(height), 1, 0.1f, 0);
+		callback.sendMotionEvent(currentEvent);
 
 	}
 
@@ -121,9 +113,11 @@ public class TuioAndroidClient implements TuioListener {
 	private void removeTuioThing(TuioContainer point, int id) {
 //		Log.d(TAG, "forwarding");
 		int event = (id == 0) ? MotionEvent.ACTION_UP : MotionEvent.ACTION_POINTER_UP;
-		MotionEvent me = makeMotionEvent(point, id, event);
-		motionEventMap.remove(id);
-		callback.sendMotionEvent(me);
+		currentEvent.setAction(event);
+		callback.sendMotionEvent(currentEvent);
+		if (getNumCursors() == 0) {
+			currentEvent = null;
+		}
 	}
 
 
