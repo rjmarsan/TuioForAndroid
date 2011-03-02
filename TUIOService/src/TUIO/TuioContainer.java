@@ -28,7 +28,7 @@ import java.util.*;
  * @author Martin Kaltenbrunner
  * @version 1.4
  */ 
-abstract class TuioContainer extends TuioPoint {
+public abstract class TuioContainer extends TuioPoint {
 	
 	/**
 	 * The unique session ID number that is assigned to each TUIO object or cursor.

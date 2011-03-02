@@ -3,9 +3,11 @@ package com.sigmusic.tacchi.tuio;
 import java.util.HashMap;
 
 import TUIO.TuioClient;
+import TUIO.TuioContainer;
 import TUIO.TuioCursor;
 import TUIO.TuioListener;
 import TUIO.TuioObject;
+import TUIO.TuioPoint;
 import TUIO.TuioTime;
 import android.os.SystemClock;
 import android.util.Log;
@@ -38,52 +40,90 @@ public class TuioAndroidClient implements TuioListener {
 	}
 	
 	
+	private MotionEvent makeMotionEvent(TuioContainer point, int id, int action) {
+		long startms = point.getStartTime().getTotalMilliseconds();
+		long totalms = point.getTuioTime().getTotalMilliseconds();
+		int totalcursors = client.getTuioCursors().size()+client.getTuioObjects().size();
+		int actionmasked = action |( 0x1 << (7+id) & 0xff00);
+		
+		
+		Log.d("TuioEvent", "TuioContainer: "+point.toString()+" startms: "+startms+" totalms: "+totalms+" cursors: "+totalcursors+" id: "+id+ " action: "+action+" Action masked: "+actionmasked);
+		
+		MotionEvent me = MotionEvent.obtain(startms, totalms, actionmasked, totalcursors, point.getScreenX(width), point.getScreenY(height), 1, 0.1f, 0, 0, 0, 0, 0);
+		return me;
+	}
+	
 	
 
 	@Override
 	public void addTuioCursor(TuioCursor tcur) {
 		Log.d(TAG, "Cursor down: "+tcur.toString());
-		MotionEvent me = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, tcur.getScreenX(width), tcur.getScreenY(height), 0);
-//		motionEventMap.put(tcur.getCursorID(), me);
-		callback.sendMotionEvent(me);
+		addTuioThing(tcur, tcur.getCursorID());
 	}
 
 	@Override
 	public void addTuioObject(TuioObject tobj) {
+		Log.d(TAG, "Fiducial down: "+tobj.toString());
+		addTuioThing(tobj, tobj.getSymbolID());
+	}
+	
+	
+	private void addTuioThing(TuioContainer point, int id) {
+//		Log.d(TAG, "forwarding");
+		int event = (id == 0) ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_POINTER_DOWN;
+		MotionEvent me = makeMotionEvent(point, id, event);
+		motionEventMap.put(id, me);
+		callback.sendMotionEvent(me);
 	}
 	
 
 	@Override
 	public void updateTuioCursor(TuioCursor tcur) {
-//		int key = tcur.getCursorID();
-//		if (motionEventMap.containsKey(key)) {
-//			MotionEvent me = motionEventMap.get(me);
-//			if (me != null) {
-//				me.
-//			}
-//		}
 		Log.d(TAG, "Cursor moved: "+tcur.toString());
-		MotionEvent me = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_MOVE, tcur.getScreenX(width), tcur.getScreenY(height), 0);
-		callback.sendMotionEvent(me);
+		updateTuioThing(tcur, tcur.getCursorID());
 	}
 
 	@Override
 	public void updateTuioObject(TuioObject tobj) {
-		// TODO Auto-generated method stub
-		
+		Log.d(TAG, "fiducial moved: "+tobj.toString());
+		updateTuioThing(tobj, tobj.getSymbolID());
+	}
+	
+	private void updateTuioThing(TuioContainer point, int id) {
+		int key = id;
+		if (motionEventMap.containsKey(key)) {
+			MotionEvent me = motionEventMap.get(key);
+			if (me != null) {
+				long totalms = point.getTuioTime().getTotalMilliseconds();
+				me = MotionEvent.obtain(me);
+				me.addBatch(totalms, point.getScreenX(width), point.getScreenY(height), 1, 0.1f, 0);
+				me.setAction(MotionEvent.ACTION_MOVE);
+				//				Log.d(TAG, "forwarding");
+				motionEventMap.put(key, me);
+				callback.sendMotionEvent(me);
+			}
+		}
+
 	}
 
 	@Override
 	public void removeTuioCursor(TuioCursor tcur) {
 		Log.d(TAG, "Cursor up: "+tcur.toString());
-		MotionEvent me = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, tcur.getScreenX(width), tcur.getScreenY(height), 0);
-		callback.sendMotionEvent(me);
+		removeTuioThing(tcur, tcur.getCursorID());
 	}
 
 	@Override
 	public void removeTuioObject(TuioObject tobj) {
-		// TODO Auto-generated method stub
-		
+		Log.d(TAG, "Fiducal up: "+tobj.toString());
+		removeTuioThing(tobj, tobj.getSymbolID());
+	}
+	
+	private void removeTuioThing(TuioContainer point, int id) {
+//		Log.d(TAG, "forwarding");
+		int event = (id == 0) ? MotionEvent.ACTION_UP : MotionEvent.ACTION_POINTER_UP;
+		MotionEvent me = makeMotionEvent(point, id, event);
+		motionEventMap.remove(id);
+		callback.sendMotionEvent(me);
 	}
 
 

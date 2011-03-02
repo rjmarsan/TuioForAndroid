@@ -35,7 +35,7 @@ public class TuioService extends Service {
     @Override
     public void onCreate() {
     	Log.d(TAG, "On create called");
-        mClient = new TuioAndroidClient(this, 480, 800);
+        mClient = new TuioAndroidClient(this, 800, 600);
         inst = new Instrumentation();
         IBinder wmbinder = ServiceManager.getService( "window" );
         Log.d( TAG, "WindowManager: "+wmbinder );

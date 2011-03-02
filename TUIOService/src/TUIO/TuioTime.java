@@ -21,6 +21,8 @@
 
 package TUIO;
 
+import android.os.SystemClock;
+
 /**
  * The TuioTime class is a simple structure that is used to reprent the time that has elapsed since the session start.
  * The time is internally represented as seconds and fractions of microseconds which should be more than sufficient for gesture related timing requirements.
@@ -230,7 +232,8 @@ public class TuioTime {
 	 * @return the absolut TuioTime representing the current system time
 	 */	
 	public static TuioTime getSystemTime() {
-		long usec = System.nanoTime()/1000;
+		long usec = SystemClock.uptimeMillis();
+//		long usec = System.nanoTime()/1000;
 		return new TuioTime(usec/1000000,usec%1000000);
 	}
 }

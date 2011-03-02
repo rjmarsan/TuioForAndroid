@@ -14,4 +14,6 @@ public interface IWindowManager {
 
     public boolean injectKeyEvent( KeyEvent keyEvent, boolean f );
     public boolean injectPointerEvent( MotionEvent motionEvent, boolean f );
+    public boolean injectInputEventNoWait(in InputEvent ev);
+
 }
