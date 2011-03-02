@@ -232,7 +232,7 @@ public class TuioTime {
 	 * @return the absolut TuioTime representing the current system time
 	 */	
 	public static TuioTime getSystemTime() {
-		long usec = SystemClock.uptimeMillis();
+		long usec = SystemClock.uptimeMillis()*1000;
 //		long usec = System.nanoTime()/1000;
 		return new TuioTime(usec/1000000,usec%1000000);
 	}

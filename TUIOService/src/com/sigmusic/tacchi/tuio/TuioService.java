@@ -45,9 +45,11 @@ public class TuioService extends Service {
     }
     
     public void sendMotionEvent(MotionEvent me) {
-        Log.i(TAG, "sending motion event");
-//    	inst.sendPointerSync(me);
-    	windowman.injectPointerEvent(me, false);
+    	if (me != null) {
+	        Log.i(TAG, "sending motion event");
+	//    	inst.sendPointerSync(me);
+	    	windowman.injectPointerEvent(me, false);
+    	}
     }
     
 

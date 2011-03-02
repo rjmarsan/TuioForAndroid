@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.sigmusic.tacchi.tuio"
       android:versionCode="1"
       android:versionName="1.0"
       android:sharedUserId="android.uid.system">
-    -->
+
     
     
-    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.sigmusic.tacchi.tuio"
-      android:versionCode="1"
-      android:versionName="1.0">
+    
     
     
     <uses-sdk android:minSdkVersion="8" />
