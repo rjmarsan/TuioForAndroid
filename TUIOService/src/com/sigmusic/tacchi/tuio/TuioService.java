@@ -3,6 +3,7 @@ package com.sigmusic.tacchi.tuio;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.os.ServiceManager;
 import android.util.Log;
@@ -41,7 +42,12 @@ public class TuioService extends Service {
         Log.d( TAG, "WindowManager: "+wmbinder );
         windowman =  IWindowManager.Stub.asInterface( wmbinder );  
         gestureControls = new TuioGestureControl(this, mClient);
-        mClient.addListener(gestureControls);
+
+    
+        
+    
+
+        
     }
     
     public void sendMotionEvent(MotionEvent me) {
