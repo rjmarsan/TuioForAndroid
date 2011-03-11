@@ -25,6 +25,14 @@ public class TuioAndroidClient implements TuioListener {
 		this.height = height;
 	}
 	
+	public void addListener(TuioListener listener) {
+		client.addTuioListener(listener);
+	}
+	
+	public void cancelAll() {
+		//TODO make this cancel everything
+	}
+	
 	public void start() {
 		Log.v(TAG, "Starting TUIO client on port:" +3333);
 		client.connect();
