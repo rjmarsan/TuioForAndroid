@@ -1,5 +1,8 @@
 package com.sigmusic.tacchi.tuio;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 import TUIO.TuioClient;
 import TUIO.TuioContainer;
 import TUIO.TuioCursor;
@@ -17,6 +20,8 @@ public class TuioAndroidClient implements TuioListener {
 	
 	MotionEvent currentEvent;
 	
+	Queue<MotionEvent> events = new LinkedList<MotionEvent>();
+	
 	public TuioAndroidClient(TuioService callback, int width, int height) {
 		client = new TuioClient();
 		client.addTuioListener(this);
@@ -24,6 +29,44 @@ public class TuioAndroidClient implements TuioListener {
 		this.width = width;
 		this.height = height;
 	}
+	
+	private static boolean running = true;
+	private class EventSender extends Thread {
+		public void run() {
+			while (running) {
+					if (events.size() > 0) {
+						synchronized(events) {
+							callback.sendMotionEvent(events.remove());
+						}
+					} else {
+//						Log.d(TAG, "Sleepinf");
+						try {
+							Thread.sleep(50);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+			}
+		}
+	}
+	
+	private void sendUpdateEvent(MotionEvent update) {
+//		if (update == null) return;
+//		synchronized(events) {
+//			events.add(update);
+//		}
+	}
+	private void sendUpDownEvent(MotionEvent updownevent) {
+//		if (updownevent == null) return;
+//		synchronized(events) {
+//			while (events.size() > 1 && events.peek().getAction() == MotionEvent.ACTION_MOVE) { //clear out all movement actions.
+//				events.remove();
+//			}
+//			events.add(updownevent);
+//		}
+	}
+	
+	EventSender eventsender;
 	
 	public void addListener(TuioListener listener) {
 		client.addTuioListener(listener);
@@ -36,11 +79,14 @@ public class TuioAndroidClient implements TuioListener {
 	public void start() {
 		Log.v(TAG, "Starting TUIO client on port:" +3333);
 		client.connect();
+		eventsender = new EventSender();
+		eventsender.start();
 	}
 	
 	public void stop() {
 		Log.v(TAG, "Stopping client");
 		client.disconnect();
+		eventsender.stop();
 	}
 	
 	
@@ -95,21 +141,38 @@ public class TuioAndroidClient implements TuioListener {
 
 		if (action == MotionEvent.ACTION_MOVE) {
 			if (currentEvent.getPointerCount() == totalcursors) {
-				currentEvent.setAction(MotionEvent.ACTION_MOVE);
-				currentEvent.addBatch(totalms, inData, 0);
+				synchronized(events) {
+					if (events.size() < 1) { //if our queue is empty
+						currentEvent.setAction(MotionEvent.ACTION_MOVE);
+						currentEvent.addBatch(totalms, inData, 0);
+						events.add(currentEvent);
+					}
+				}
 			}
 			else {
-//				return null; //EEK! something happened in the middle of us doing stuff.
 				currentEvent = MotionEvent.obtainNano(startms, totalms, System.nanoTime(), actionmasked, totalcursors, pointerIds, inData, 0, 0, 0, 0, 0);
-
+//				return null; //EEK! something happened in the middle of us doing stuff.
+				synchronized(events) {
+					if (currentEvent != null)
+						events.add(currentEvent);
+				}
 			}
 		}
 		else if (action == MotionEvent.ACTION_UP && totalcursors <= 1) {
 //			currentEvent.setAction(actionmasked); //nope that didn't fix it
 			totalcursors = 0;
 			currentEvent = MotionEvent.obtainNano(startms, totalms, System.nanoTime(), actionmasked, totalcursors, pointerIds, inData, 0, 0, 0, 0, 0);
+			synchronized(events) {
+				if (currentEvent != null)
+					events.add(currentEvent);
+			}
+		
 		} else {
 			currentEvent = MotionEvent.obtainNano(startms, totalms, System.nanoTime(), actionmasked, totalcursors, pointerIds, inData, 0, 0, 0, 0, 0);
+			synchronized(events) {
+				if (currentEvent != null)
+					events.add(currentEvent);
+			}
 		}
 		
 		
@@ -138,7 +201,8 @@ public class TuioAndroidClient implements TuioListener {
 //		Log.d(TAG, "forwarding");
 		int event = (id == id) ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_POINTER_DOWN;
 		MotionEvent me = makeOrUpdateMotionEvent(point, id, event);
-		callback.sendMotionEvent(me);
+//		callback.sendMotionEvent(me);
+		this.sendUpDownEvent(me);
 	}
 	
 
@@ -157,7 +221,8 @@ public class TuioAndroidClient implements TuioListener {
 	private void updateTuioThing(TuioContainer point, long id) {
 		int event = MotionEvent.ACTION_MOVE;
 		MotionEvent me = makeOrUpdateMotionEvent(point, id, event);
-		callback.sendMotionEvent(me);
+//		callback.sendMotionEvent(me);
+		this.sendUpdateEvent(me);
 
 	}
 
@@ -177,7 +242,8 @@ public class TuioAndroidClient implements TuioListener {
 //		Log.d(TAG, "forwarding");
 		int event = (id == 0) ? MotionEvent.ACTION_UP : MotionEvent.ACTION_POINTER_UP;
 		MotionEvent me = makeOrUpdateMotionEvent(point, id, event);
-		callback.sendMotionEvent(me);
+		//callback.sendMotionEvent(me);
+		this.sendUpDownEvent(me);
 	}
 
 
