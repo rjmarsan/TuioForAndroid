@@ -51,7 +51,7 @@ public class TuioService extends Service {
         IBinder wmbinder = ServiceManager.getService( "window" );
 //        Log.d( TAG, "WindowManager: "+wmbinder );
         windowman =  IWindowManager.Stub.asInterface( wmbinder );  
-        gestureControls = new TuioGestureControl(this, mClient);
+        //gestureControls = new TuioGestureControl(this, mClient);
     }
     
     private int intFromStr(SharedPreferences prefs, String key, String defaultVal) {
