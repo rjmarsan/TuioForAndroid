@@ -1,5 +1,8 @@
 package com.sigmusic.tacchi.tuio;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -17,15 +20,17 @@ public class TuioAndroidClient implements TuioListener {
 	TuioClient client;
 	TuioService callback;
 	int width, height;
+	int port;
 	
 	MotionEvent currentEvent;
 	
 	Queue<MotionEvent> events = new LinkedList<MotionEvent>();
 	
-	public TuioAndroidClient(TuioService callback, int width, int height) {
-		client = new TuioClient();
+	public TuioAndroidClient(TuioService callback,int port, int width, int height) {
+		client = new TuioClient(port);
 		client.addTuioListener(this);
 		this.callback = callback;
+		this.port = port;
 		this.width = width;
 		this.height = height;
 	}
@@ -34,18 +39,21 @@ public class TuioAndroidClient implements TuioListener {
 	private class EventSender extends Thread {
 		public void run() {
 			while (running) {
-					if (events.size() > 0) {
-						synchronized(events) {
-							callback.sendMotionEvent(events.remove());
-						}
-					} else {
+				int eventssize = 0;
+				synchronized(events) {
+					eventssize = events.size();
+					if (eventssize > 0) {
+						callback.sendMotionEvent(events.remove());
+					} 	
+				}
+				if (eventssize <= 0) {
 //						Log.d(TAG, "Sleepinf");
-						try {
-							Thread.sleep(50);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
+					try {
+						Thread.sleep(50);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
+				}
 			}
 		}
 	}
@@ -77,16 +85,17 @@ public class TuioAndroidClient implements TuioListener {
 	}
 	
 	public void start() {
-		Log.v(TAG, "Starting TUIO client on port:" +3333);
+		Log.v(TAG, "Starting TUIO client on port:" +port);
 		client.connect();
 		eventsender = new EventSender();
+		running = true;
 		eventsender.start();
 	}
 	
 	public void stop() {
 		Log.v(TAG, "Stopping client");
 		client.disconnect();
-		eventsender.stop();
+		running = false;
 	}
 	
 	
@@ -114,25 +123,34 @@ public class TuioAndroidClient implements TuioListener {
 		
 		int[] pointerIds = new int[totalcursors];
 		int i =0;
-		float[] inData = new float[totalcursors * 4]; // 4 = MotionEvent.NUM_SAMPLE_DATA;
+		float[] inData = new float[totalcursors * MotionEvent.NUM_SAMPLE_DATA]; // 4 = MotionEvent.NUM_SAMPLE_DATA;
 		for (TuioObject obj : client.getTuioObjects()) {
 			if ((action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_POINTER_UP)  || obj.getSessionID() != id) { //we need to get rid of the removed cursor.
 				pointerIds[i] = obj.getSymbolID();
 				
-				inData[i*4] = obj.getScreenX(width);
-				inData[i*4+1] = obj.getScreenY(height);
-				inData[i*4+2] = 1;//pressure
-				inData[i*4+3] = 0.1f; //size
+				inData[i*MotionEvent.NUM_SAMPLE_DATA] = obj.getScreenX(width);
+				inData[i*MotionEvent.NUM_SAMPLE_DATA+1] = obj.getScreenY(height);
+				inData[i*MotionEvent.NUM_SAMPLE_DATA+2] = 1;//pressure
+				inData[i*MotionEvent.NUM_SAMPLE_DATA+3] = 0.1f; //size
 				i++;
 			}
 		}
+		Collections.sort(client.getTuioCursors(), new Comparator<TuioCursor>() {
+			public int compare(TuioCursor object1, TuioCursor object2) {
+				if (object1.getCursorID() > object2.getCursorID()) {
+					return 1;
+				} else if (object1.getCursorID() <  object2.getCursorID()) {
+					return -1;
+				}
+				return 0;
+			}});
 		for (TuioCursor obj : client.getTuioCursors()) {
 			if ((action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_POINTER_UP) || obj.getSessionID() != id) { //we need to get rid of the removed cursor.
-				pointerIds[i] = obj.getCursorID();
-				inData[i*4] = obj.getScreenX(width);
-				inData[i*4+1] = obj.getScreenY(height);
-				inData[i*4+2] = 1;//pressure
-				inData[i*4+3] = 0.1f; //size
+				pointerIds[i] = i; //obj.getCursorID();
+				inData[i*MotionEvent.NUM_SAMPLE_DATA] = obj.getScreenX(width);
+				inData[i*MotionEvent.NUM_SAMPLE_DATA+1] = obj.getScreenY(height);
+				inData[i*MotionEvent.NUM_SAMPLE_DATA+2] = 1;//pressure
+				inData[i*MotionEvent.NUM_SAMPLE_DATA+3] = 0.1f; //size
 				i++;
 			}
 
