@@ -12,8 +12,11 @@
     
     <uses-sdk android:minSdkVersion="8" />
 
-    <application android:icon="@drawable/icon" android:label="@string/app_name">
+    <application android:icon="@drawable/icon" android:label="@string/app_name" android:persistent="true">
         <activity android:name=".TuioTest"
+                  android:label="@string/app_name">
+        </activity>
+        <activity android:name=".TuioServiceSettings"
                   android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,9 +24,7 @@
             </intent-filter>
         </activity>
         
-        
-		<service android:name=".TuioService"
-				 android:process=":tuioservice" > 
+		<service android:name=".TuioService"> 
 				 
 		    <intent-filter>
                 <!-- These are the interfaces supported by the service, which

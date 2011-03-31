@@ -30,6 +30,12 @@
 	             android:title="UDP Port"
 	             android:key="port"
 	             android:defaultValue="3333" />
+	     
+	     <com.sigmusic.tacchi.tuio.preferences.TestTuioPreference
+	             android:name="TestTUIO"
+	             android:title="Test TUIO"
+	             android:key="testtuio" />
+	      
      
 
 </PreferenceScreen>
