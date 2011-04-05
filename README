@@ -11,7 +11,7 @@ Instructions:
 This application will run a TUIO client on your Android device, and translate that into Android touch events which it injects into the OS.
 Given the nature of this service, it must be given system privileges, which normal applications cannot get.  
 The solution is to compile the application and sign it with the system keys.  This is not normally possible unless you built it yourself.
-However, the following APK can be installed on the Android-x86 2.2 built:
+However, the following APK can be installed once your custom build (in that case, it will have blank system keys):
 
  * https://github.com/rjmarsan/TuioForAndroid/blob/master/androidx86/froyo/TuioSign/TUIOService-Signed.apk
  * 'adb install TUIOService-Signed.apk' will install it for you
@@ -31,7 +31,7 @@ However, be warned:
 Building:
     Prereqs:
         Eclipse (or ant, but I don't know how to help you there)
-        Android X86 (ROM or custom build)
+        A custom build of Android-X86 (instructions on their website)
         A device to run it on, VirtualBox, VMWare, KQemu, etc...
     Make sure you forwarded ports (if on a VM):
         Forward TCP port 5556 to enable ADB to work
