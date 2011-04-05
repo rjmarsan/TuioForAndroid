@@ -1,6 +1,53 @@
 TUIO for Android-x86
 
-An attempt to add native TUIO input support to the Android platform.
+A (working) attempt to add native TUIO input support to the Android platform.
+
+
+This is fully working!
+
+
+
+Instructions: 
+This application will run a TUIO client on your Android device, and translate that into Android touch events which it injects into the OS.
+Given the nature of this service, it must be given system privileges, which normal applications cannot get.  
+The solution is to compile the application and sign it with the system keys.  This is not normally possible unless you built it yourself.
+However, the following APK can be installed on the Android-x86 2.2 built:
+
+ * https://github.com/rjmarsan/TuioForAndroid/blob/master/androidx86/froyo/TuioSign/TUIOService-Signed.apk
+ * 'adb install TUIOService-Signed.apk' will install it for you
+ * open up the application 'TUIO Service' and enable the service
+ * check if data is getting entered by opening up the test program
+   * If not, make sure you have forwarded UDP port 3333 to your Android VM, or whatever
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+However, be warned:
+    A) This is a work in progress, it may not be fully functional all the time
+    B) This RUNS WITH SYSTEM PRIVILEGES, AND TAKES ARBITRARY DATA FROM THE NETWORK TO CONTROL YOUR SYSTEM
+       (You need to trust your network.)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+Building:
+    Prereqs:
+        Eclipse (or ant, but I don't know how to help you there)
+        Android X86 (ROM or custom build)
+        A device to run it on, VirtualBox, VMWare, KQemu, etc...
+    Make sure you forwarded ports (if on a VM):
+        Forward TCP port 5556 to enable ADB to work
+        Forward UDP port 3333 to enable TUIO to work
+    If on a VM: Run 'adb connect localhost:PORT' where PORT=5556, or whatever you chose
+    Else:  'adb connect <device ip>:PORT'
+    Open up TUIOService in Eclipse, or whatever, if you don't know how to import an Android project, google it.
+    Running it normally may be a little useless, as it requests to run as system uid, which Android will reject unless signed
+        However, commenting out that line in AndroidManifest.xml will allow it to run, but crash if it injects events outside your application
+    Right click the project, go down to Android Tools and select Export Unsigned Application Package...
+    Export it to androidx86/froyo/TuioSign/TUIOService.apk  (or where ever if you want, it's just a suggestion)
+    Enter the androidx86/froyo/TuioSign/ directory and run ./notes.sh (signs your application package and writes it to TuioService-Signed.apk)
+    'adb uninstall com.sigmusic.tacchi.tuio' to remove the application
+    'adb install TuioService-Signed.apk' to install the new version
+
+
 
 
 
