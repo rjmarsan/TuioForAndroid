@@ -20,20 +20,31 @@ public class TuioGestureControl  {
 		listeners.add(new SwipeGestures(client.client, this));
 	}
 	
+	public void startEvent() {
+		mService.insertOverlay();
+	}
+	
+	public void endEvent() {
+		mService.removeOverlay();
+	}
+	
 	public void fireHomeEvent() {
 		mClient.cancelAll();
 		mService.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_HOME));
 		mService.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_HOME));
+		mService.removeOverlay();
 	}
 	public void fireBackEvent() {
 		mClient.cancelAll();
 		mService.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
 		mService.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK));
+		mService.removeOverlay();
 	}
 	public void fireMenuEvent() {
 		mClient.cancelAll();
 		mService.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MENU));
 		mService.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MENU));
+		mService.removeOverlay();
 	}
 
 

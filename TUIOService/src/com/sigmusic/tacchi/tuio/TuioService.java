@@ -1,16 +1,17 @@
 package com.sigmusic.tacchi.tuio;
 
+import java.lang.reflect.Method;
+
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
-import android.os.ServiceManager;
 import android.util.Log;
 import android.view.Display;
-import android.view.IWindowManager;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -35,11 +36,35 @@ public class TuioService extends Service {
     }
 
     
-    private TuioAndroidClient mClient;
-    private IWindowManager windowman;
+    private TuioAndroidClientHoneycomb mClient;
+    private Object windowman;
     private WindowManager window;
+    private IBinder wmbinder;
     
     private TuioGestureControl gestureControls;
+    
+    private View overlayView;
+    private Handler mHandler;
+    
+    private Method injectPointerEvent = getInjectPointerEvent();
+    Method getInjectPointerEvent() {
+    	try {
+			return Class.forName("android.view.IWindowManager").getMethod("injectPointerEvent", MotionEvent.class, boolean.class);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+    }
+    private Method injectKeyEvent = getInjectKeyEvent();
+    Method getInjectKeyEvent() {
+    	try {
+			return Class.forName("android.view.IWindowManager").getMethod("injectKeyEvent", KeyEvent.class, boolean.class);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+    }
+    
     
     @Override
     public void onCreate() {
@@ -57,19 +82,33 @@ public class TuioService extends Service {
     	Log.d(TAG, "Creating TUIO server with width: "+width+"and height:"+height);
     	
     	/** Start the TUIO client with the port from preferences and display parameters **/
-        mClient = new TuioAndroidClient(this,port, width, height);
+        mClient = new TuioAndroidClientHoneycomb(this,port, width, height);
         
         /** Steal the IWindowManager.  The code from this is stub code as it 
          * relies on stub code found in stub/.  Currently, froyo implements these methods
-         * as expected. future versions may not. **/
-        IBinder wmbinder = ServiceManager.getService( "window" );
-        windowman =  IWindowManager.Stub.asInterface( wmbinder );  
+         * as expected. future versions may not.  **/
+        try {
+	        wmbinder = (IBinder)Class.forName("android.os.ServiceManager").getMethod("getService", String.class).invoke(null, "window");
+	        windowman =  Class.forName("android.view.IWindowManager$Stub").getMethod("asInterface", IBinder.class).invoke(null, wmbinder);//IWindowManager.Stub.asInterface( wmbinder );  
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
         
         /** this code listens to the raw tuio and detects certain gestures to mimic
          * BACK, HOME, and MENU (more later) **/
- //       gestureControls = new TuioGestureControl(this, mClient);
+        gestureControls = new TuioGestureControl(this, mClient);
         
-//        insertOverlay();
+       
+        mHandler = new Handler();
+        createOverlay();
+    }
+    
+    /**
+     * Puddi puddi.
+     */
+    private void createOverlay() {
+    	overlayView = new View(this);
+    	overlayView.setBackgroundColor(Color.TRANSPARENT);
     }
     
     private int intFromStr(SharedPreferences prefs, String key, String defaultVal) {
@@ -79,14 +118,22 @@ public class TuioService extends Service {
     public void sendMotionEvent(MotionEvent me) {
     	if (me != null) {
 	        Log.i(TAG, "sending motion event");
-	    	windowman.injectPointerEvent(me, false);
+	        try {
+	        	injectPointerEvent.invoke(windowman,me, false);
+	        } catch (Exception e) {
+	        	e.printStackTrace();
+	        }
     	}
     }
     
     public void sendKeyEvent(KeyEvent ke) {
     	if (ke != null) {
 	        Log.i(TAG, "sending keypress event");
-	    	windowman.injectKeyEvent(ke, false);
+	        try {
+	        	injectKeyEvent.invoke(windowman, ke, false);
+	        } catch (Exception e) {
+	        	e.printStackTrace();
+	        }
     	}
     }
     
@@ -94,9 +141,27 @@ public class TuioService extends Service {
      * Testing the ability for a service to insert views into the current window
      */
     public void insertOverlay() {
-    	View v = new View(this);
-    	v.setBackgroundColor(Color.GRAY);
-    	window.addView(v, new LayoutParams(100,100));
+    	mHandler.post(new Runnable() { 
+    		public void run() {
+		    	LayoutParams param = new LayoutParams(LayoutParams.TYPE_SYSTEM_OVERLAY,
+						   LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+		    	param.token = wmbinder;
+		    	window.addView(overlayView, param);
+    		}
+    	});
+    }
+    
+    public void removeOverlay() {
+    	mHandler.post(new Runnable() { 
+    		public void run() {
+    			try {
+	    	    	if (overlayView != null)
+	    	    		window.removeView(overlayView);
+    			} catch (Exception e) {
+    				e.printStackTrace();
+    			}
+    		}
+    	});
     }
     
 
