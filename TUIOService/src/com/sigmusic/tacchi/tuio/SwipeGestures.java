@@ -30,6 +30,7 @@ public class SwipeGestures implements TuioListener {
 	@Override
 	public void addTuioCursor(TuioCursor tcur) {
 		System.out.println("cursor added! "+tcur);
+		callback.startEvent();
 	}
 
 	@Override
@@ -44,6 +45,7 @@ public class SwipeGestures implements TuioListener {
 
 	@Override
 	public void removeTuioCursor(TuioCursor tcur) {
+		callback.endEvent();
 		//trim history to previous 5
 		pastCursors.add(tcur);
 		if (pastCursors.size() > MAX_CURSORS+1) {
