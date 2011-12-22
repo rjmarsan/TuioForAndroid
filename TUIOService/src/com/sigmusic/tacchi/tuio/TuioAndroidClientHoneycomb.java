@@ -116,9 +116,9 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 		int totalcursors = getNumCursors();
 		if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
 			//totalcursors -= 1;
-			if (totalcursors <= 0) { //no cursors is a special case
+			if (totalcursors <= 1) { //no cursors is a special case
 				//id = -1;
-				//totalcursors = 1;
+				totalcursors = 1;
 				action = MotionEvent.ACTION_UP; //no more ACTION_POINTER_UP. need to be serious.
 			}
 		}
@@ -185,8 +185,8 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 					}
 				}
 				else {
-					currentEvent = MotionEvent.obtain(startms, SystemClock.uptimeMillis(), actionmasked, totalcursors, pointerIds, inData, 0, 0.0f, 0.0f, 0, 0, 0, 0);
-	//				return null; //EEK! something happened in the middle of us doing stuff.
+					//currentEvent = MotionEvent.obtain(startms, SystemClock.uptimeMillis(), actionmasked, totalcursors, pointerIds, inData, 0, 0.0f, 0.0f, 0, 0, 0, 0);
+					if (1==1) return null; //EEK! something happened in the middle of us doing stuff.
 					synchronized(events) {
 						if (currentEvent != null)
 							events.add(currentEvent);
@@ -236,7 +236,8 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 	
 	private void addTuioThing(TuioContainer point, long id) {
 //		Log.d(TAG, "forwarding");
-		int event = (id == 0) ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_POINTER_DOWN;
+		//int event = (id == id) ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_POINTER_DOWN;
+		int event = (getNumCursors() <= 1) ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_POINTER_DOWN;
 		MotionEvent me = makeOrUpdateMotionEvent(point, id, event);
 //		callback.sendMotionEvent(me);
 		this.sendUpDownEvent(me);
@@ -277,7 +278,7 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 	
 	private void removeTuioThing(TuioContainer point, long id) {
 //		Log.d(TAG, "forwarding");
-		int event = (id == 0) ? MotionEvent.ACTION_UP : MotionEvent.ACTION_POINTER_UP;
+		int event = (id == id) ? MotionEvent.ACTION_UP : MotionEvent.ACTION_POINTER_UP;
 		MotionEvent me = makeOrUpdateMotionEvent(point, id, event);
 		//callback.sendMotionEvent(me);
 		this.sendUpDownEvent(me);
