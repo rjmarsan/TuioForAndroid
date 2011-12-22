@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -36,7 +37,7 @@ public class TuioService extends Service {
     }
 
     
-    private TuioAndroidClientHoneycomb mClient;
+    private TuioAndroidClient mClient;
     private Object windowman;
     private WindowManager window;
     private IBinder wmbinder;
@@ -82,7 +83,14 @@ public class TuioService extends Service {
     	Log.d(TAG, "Creating TUIO server with width: "+width+"and height:"+height);
     	
     	/** Start the TUIO client with the port from preferences and display parameters **/
-        mClient = new TuioAndroidClientHoneycomb(this,port, width, height);
+    	if (Build.VERSION.SDK_INT >= 14) {
+	        //mClient = new TuioAndroidClientICS(this,port, width, height);
+	        mClient = new TuioAndroidClientHoneycomb(this,port, width, height);
+    	} else if (Build.VERSION.SDK_INT >= 11) {
+	        mClient = new TuioAndroidClientHoneycomb(this,port, width, height);
+    	} else {
+	        mClient = new TuioAndroidClient(this,port, width, height);
+    	}
         
         /** Steal the IWindowManager.  The code from this is stub code as it 
          * relies on stub code found in stub/.  Currently, froyo implements these methods

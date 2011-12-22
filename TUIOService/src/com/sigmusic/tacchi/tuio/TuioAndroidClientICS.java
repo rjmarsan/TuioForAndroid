@@ -18,7 +18,7 @@ import android.view.MotionEvent;
 import android.view.MotionEvent.PointerCoords;
 import android.view.MotionEvent.PointerProperties;
 
-public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements TuioListener {
+public class TuioAndroidClientICS extends TuioAndroidClient implements TuioListener {
 	public final static String TAG = "TuioAndroidClient";
 	TuioClient client;
 	TuioService callback;
@@ -29,10 +29,19 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 	
 	Queue<MotionEvent> events = new LinkedList<MotionEvent>();
 	
+	//public static final Method addBatch = getAddBatch();
+	static Method getAddBatch() {
+		try {
+		return MotionEvent.class.getMethod("addBatch", long.class, float[].class, int.class);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
 	
 	
-	public TuioAndroidClientHoneycomb(TuioService callback,int port, int width, int height) {
+	public TuioAndroidClientICS(TuioService callback,int port, int width, int height) {
 		super(callback, port, width, height);
 		client = new TuioClient(port);
 		client.addTuioListener(this);
@@ -115,26 +124,26 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 		long totalms = point.getTuioTime().getTotalMilliseconds();
 		int totalcursors = getNumCursors();
 		if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-			//totalcursors -= 1;
+			totalcursors -= 1;
 			if (totalcursors <= 0) { //no cursors is a special case
-				//id = -1;
-				//totalcursors = 1;
+				id = -1;
+				totalcursors = 1;
 				action = MotionEvent.ACTION_UP; //no more ACTION_POINTER_UP. need to be serious.
 			}
 		}
-		int actionmasked = action;//|( 0x1 << (7+id) & 0xff00);
+		int actionmasked = action ;//|( 0x1 << (7+id) & 0xff00);
 		
 		Log.d("TuioEvent", "TuioContainer: "+point.toString()+" startms: "+startms+" totalms: "+totalms+" cursors: "+totalcursors+" id: "+id+ " action: "+action+" Action masked: "+actionmasked);
 		
 	
 		
-		int[] pointerIds = new int[totalcursors];
+		PointerProperties[] pointerIds = new PointerProperties[totalcursors];
 		int i =0;
 		PointerCoords[] inData = new PointerCoords[totalcursors]; 
 		for (TuioObject obj : client.getTuioObjects()) {
-			//if (   ( 1==1 ||  (action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_POINTER_UP))  || obj.getSessionID() != id) { //we need to get rid of the removed cursor.
-				//pointerIds[i] = new PointerProperties();
-				pointerIds[i] = obj.getSymbolID();
+			if ((action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_POINTER_UP)  || obj.getSessionID() != id) { //we need to get rid of the removed cursor.
+				pointerIds[i] = new PointerProperties();
+				pointerIds[i].id = obj.getSymbolID();
 				
 				PointerCoords coord = new PointerCoords();
 				
@@ -144,7 +153,7 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 				coord.size = 0.1f; //size
 				inData[i] = coord;
 				i++;
-			//}
+			}
 		}
 		Collections.sort(client.getTuioCursors(), new Comparator<TuioCursor>() {
 			public int compare(TuioCursor object1, TuioCursor object2) {
@@ -156,9 +165,9 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 				return 0;
 			}});
 		for (TuioCursor obj : client.getTuioCursors()) {
-			//if (  ( 1 == 1 ||   (action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_POINTER_UP)) || obj.getSessionID() != id) { //we need to get rid of the removed cursor.
-				//pointerIds[i] = new PointerProperties();
-				pointerIds[i] = i;
+			if ((action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_POINTER_UP) || obj.getSessionID() != id) { //we need to get rid of the removed cursor.
+				pointerIds[i] = new PointerProperties();
+				pointerIds[i].id = i;
 				
 				PointerCoords coord = new PointerCoords();
 				
@@ -168,7 +177,7 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 				coord.size = 0.1f; //size
 				inData[i] = coord;
 				i++;
-			//}
+			}
 
 		}
 		
@@ -185,7 +194,7 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 					}
 				}
 				else {
-					currentEvent = MotionEvent.obtain(startms, SystemClock.uptimeMillis(), actionmasked, totalcursors, pointerIds, inData, 0, 0.0f, 0.0f, 0, 0, 0, 0);
+					currentEvent = MotionEvent.obtain(startms, SystemClock.uptimeMillis(), actionmasked, totalcursors, pointerIds, inData, 0, 0, 0.0f, 0.0f, 0, 0, 0, 0);
 	//				return null; //EEK! something happened in the middle of us doing stuff.
 					synchronized(events) {
 						if (currentEvent != null)
@@ -196,14 +205,19 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 			else if (action == MotionEvent.ACTION_UP && totalcursors <= 1) {
 	//			currentEvent.setAction(actionmasked); //nope that didn't fix it
 				totalcursors = 1;
-				currentEvent = MotionEvent.obtain(startms, SystemClock.uptimeMillis(), actionmasked, totalcursors, pointerIds, inData, 0, 0.0f, 0.0f, 0, 0, 0, 0);
+				/**long downTime, long eventTime,
+            int action, int pointerCount, PointerProperties[] pointerProperties,
+            PointerCoords[] pointerCoords, int metaState, int buttonState,
+            float xPrecision, float yPrecision, int deviceId,
+            int edgeFlags, int source, int flags**/
+				currentEvent = MotionEvent.obtain(startms, SystemClock.uptimeMillis(), actionmasked, totalcursors, pointerIds, inData, 0, 0, 0.0f, 0.0f, 0, 0, 0, 0);
 				synchronized(events) {
 					if (currentEvent != null)
 						events.add(currentEvent);
 				}
 			
 			} else {
-				currentEvent = MotionEvent.obtain(startms, SystemClock.uptimeMillis(), actionmasked, totalcursors, pointerIds, inData, 0, 0.0f, 0.0f, 0, 0, 0, 0);
+				currentEvent = MotionEvent.obtain(startms, SystemClock.uptimeMillis(), actionmasked, totalcursors, pointerIds, inData, 0, 0, 0.0f, 0.0f, 0, 0, 0, 0);
 				synchronized(events) {
 					if (currentEvent != null)
 						events.add(currentEvent);
@@ -236,7 +250,7 @@ public class TuioAndroidClientHoneycomb extends TuioAndroidClient implements Tui
 	
 	private void addTuioThing(TuioContainer point, long id) {
 //		Log.d(TAG, "forwarding");
-		int event = (id == 0) ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_POINTER_DOWN;
+		int event = (id == id) ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_POINTER_DOWN;
 		MotionEvent me = makeOrUpdateMotionEvent(point, id, event);
 //		callback.sendMotionEvent(me);
 		this.sendUpDownEvent(me);
